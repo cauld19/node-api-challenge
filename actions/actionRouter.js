@@ -14,18 +14,14 @@ router.get('/', (req, res) => {
           })
   });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', validateActionId, (req, res) => {
     Action.get(req.params.id)
-    .then(action => {
-        if(action) {
-            res.status(200).json(action);
-        } else {
-            res.status(400).json({message: "The action with the specified ID does not exist"});
-        }
-    })
-    .catch(err => {
-        res.status(500).json({error: "The action information could not be retrieved"});
-    })
+        .then(action => {
+            res.status(200).json(action)
+        })
+        .catch(err => {
+            res.status(500).json({error: "The action information could not be retrieved"});
+        })
 });
 
 router.post('/', validateAction, (req, res) => {
@@ -40,7 +36,7 @@ router.post('/', validateAction, (req, res) => {
       })
 });
 
-router.put('/:id', validateAction, (req, res) => {
+router.put('/:id', validateActionId, validateAction, (req, res) => {
     const actionInfo = req.body
 
     Action.update(req.params.id, actionInfo)
@@ -52,7 +48,7 @@ router.put('/:id', validateAction, (req, res) => {
         })  
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validateActionId, (req, res) => {
 
     Action.remove(req.params.id)
         .then(action => {
@@ -67,6 +63,22 @@ router.delete('/:id', (req, res) => {
 
 
 /**************************************************************** Custom Middleware */
+
+function validateActionId(req, res, next) {
+    const {id} = req.params;
+    Action.get(id)
+        .then(action => {
+        if(action) {
+            req.action = action;
+            next();
+        } else {
+            res.status(400).json({ message: "invalid action id" });
+        }   
+        })
+        .catch(err => {
+            res.status(500).json({message: 'exception error'});
+        })
+}
 
 function validateAction(req, res, next) {
     const actionData = req.body;

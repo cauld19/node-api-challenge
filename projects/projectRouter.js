@@ -14,14 +14,10 @@ router.get('/', (req, res) => {
           })
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', validateProjectId, (req, res) => {
     Project.get(req.params.id)
         .then(project => {
-            if(project) {
                 res.status(200).json(project);
-            } else {
-                res.status(400).json({message: "The project with the specified ID does not exist"});
-            }
         })
         .catch(err => {
             res.status(500).json({error: "The project information could not be retrieved"});
@@ -41,7 +37,7 @@ router.post('/', validateProject, (req, res) => {
       })
 });
 
-router.put('/:id', validateProject, (req, res) => {
+router.put('/:id', validateProjectId, validateProject, (req, res) => {
     const projectInfo = req.body
 
     Project.update(req.params.id, projectInfo)
@@ -53,7 +49,7 @@ router.put('/:id', validateProject, (req, res) => {
         })  
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validateProjectId, (req, res) => {
 
     Project.remove(req.params.id)
         .then(action => {
@@ -64,7 +60,7 @@ router.delete('/:id', (req, res) => {
         })
 });
 
-router.get('/:id/action', (req, res) => {
+router.get('/:id/action', validateProjectId, (req, res) => {
 
     Project.getProjectActions(req.params.id)
         .then(project => {
@@ -84,6 +80,22 @@ router.get('/:id/action', (req, res) => {
 
 
   /**************************************************************** Custom Middleware */
+
+function validateProjectId(req, res, next) {
+    const {id} = req.params;
+    Project.get(id)
+        .then(project => {
+        if(project) {
+            req.project = project;
+            next();
+        } else {
+            res.status(400).json({ message: "invalid project id" });
+        }   
+        })
+        .catch(err => {
+            res.status(500).json({message: 'exception error'});
+        })
+}
 
 function validateProject(req, res, next) {
     const projectData = req.body;
